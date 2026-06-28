@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>潜入せよ Ver.3.0 Alpha Free Placement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<audio id="bgm" loop preload="auto"><source src="sounds/bgm.mp3" type="audio/mpeg"></audio>
+
+<div id="titleScreen" class="screen">
+  <div class="titleStage">
+    <img src="images/title.png" id="titleImage" alt="潜入せよ">
+    <div class="titleMenu">
+      <button id="titleStartButton" class="menuButton titleChoice" onclick="showDifficulty();playBGM()">はじめる</button>
+      <button id="titleRulesButton" class="menuButton titleChoice" onclick="showRules();playBGM()">ルール</button>
+    </div>
+  </div>
+</div>
+
+<div id="rulesScreen" class="screen">
+  <div class="window">
+    <h2>ルール</h2>
+    <p><span class="yellow">目的</span>：相手の頭領を撃破するか、自分の頭領を敵陣へ潜入させれば勝利です。</p>
+    <p>あなたは <span class="blue">青の忍者軍</span>。相手は <span class="red">赤の忍者軍</span> です。</p>
+    <p>まず10体の中から5体を選びます。5体目を選ぶと「これでいいですか？」が出ます。</p>
+    <p>その後、選んだ5体から <span class="yellow">頭領</span> を1体選びます。相手の頭領は見えません。</p>
+    <p><span class="yellow">移動</span>：自分の駒をクリックすると、通常の移動先が <span class="blue">青</span>、特殊能力で増えた移動先が <span class="yellow">黄</span> で表示されます。</p>
+    <p>相手の駒をクリックすると、相手の移動先が <span class="red">赤</span> で表示されます。</p>
+    <p>相手の駒がいるマスに進むと撃破します。相手の <span class="yellow">頭領</span> を撃破すると勝利です。</p>
+    <p><span class="yellow">潜入</span>：頭領が敵陣へ到着しただけでは勝ちではありません。次の自分の番にその頭領をクリックして、潜入を実行すると勝利です。</p>
+    <p>やさしい：危険な場所に 💥 が出て置けません。　ふつう：💥 は出ません。</p>
+    <h2>能力</h2>
+    <p><span class="yellow">輪廻転生（りんねてんせい）</span>：せおりが敵を撃破すると、墓地のミタマをせおりの後ろに復活。</p>
+    <p><span class="yellow">急降下（きゅうこうか）</span>：ナルカミは通常上下左右2マス。はやてと接触中は上下左右3マス。</p>
+    <p><span class="yellow">奪取（だっしゅ）</span>：マカミがしおんの後ろにいる時、しおんの前の敵を撃破して元の位置に戻る。</p>
+    <p><span class="yellow">写し身（うつしみ）</span>：だんは相手が直前に動かした駒の動きをコピー。</p>
+    <p><span class="yellow">旋回（せんかい）</span>：オロチは通常斜め1。じゃのめと接触中は全方向1。</p>
+    <p><span class="yellow">招魂（しょうこん）</span>：せおりが撃破時にミタマ復活を発動します。</p>
+    <div class="center"><button onclick="showDifficulty()">はじめる</button> <button onclick="showTitle()">タイトルへ</button></div>
+  </div>
+</div>
+
+<div id="difficultyScreen" class="screen">
+  <div class="window center">
+    <h2>難易度を選んでください</h2>
+    <button class="menuButton" onclick="startTeamSelect('easy')">やさしい</button><p class="small">💥ヒントあり。危険マスには置けません。</p>
+    <button class="menuButton" onclick="startTeamSelect('normal')">ふつう</button><p class="small">移動範囲のみ表示。💥なし。</p>
+    <button onclick="showTitle()">タイトルへ</button>
+  </div>
+</div>
+
+<div id="teamScreen" class="screen">
+  <div class="window teamWindow">
+    <h2>10体から5体を選択</h2>
+    <div class="teamSelectLayout">
+      <div id="teamCards" class="teamGrid"></div>
+      <div id="teamDetail" class="teamDetail"></div>
+    </div>
+    <div id="selectCount" class="center yellow selectCount">あと 5体　選択してください</div>
+  </div>
+</div>
+
+
+<div id="selectConfirmOverlay" class="confirmOverlay">
+  <div class="confirmBox">
+    <div class="confirmTitle">これでいいですか？</div>
+    <div id="confirmSelectedFaces" class="confirmFaces"></div>
+    <div class="confirmButtons">
+      <button onclick="confirmTeamSelection()">はい</button>
+      <button onclick="redoTeamSelection()">やりなおす</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="placementScreen" class="screen">
+  <div class="window placementWindow">
+    <h2>初期配置</h2>
+    <p class="center small">選んだ5体を <span class="blue">自陣3列</span> に配置してください。最初は隣接して配置できません。</p>
+    <div class="placementLayout">
+      <div id="placementBoard" class="placementBoard"></div>
+      <div class="placementSide">
+        <div class="placementSideTitle">待機中</div>
+        <div id="placementBench" class="placementBench"></div>
+        <div id="placementMessage" class="placementMessage">配置する駒を選んでください</div>
+      </div>
+    </div>
+    <div id="placementConfirm" class="placementConfirm">
+      <div class="confirmTitle">配置はこれでいいですか？</div>
+      <button onclick="confirmPlacement()">はい</button>
+      <button onclick="redoPlacement()">やりなおす</button>
+    </div>
+    <div class="center" style="margin-top:14px"><button onclick="showTeamSelect()">編成へ戻る</button></div>
+  </div>
+</div>
+
+<div id="leaderScreen" class="screen">
+  <div class="window" style="max-width:900px">
+    <h2>頭領を選んでください</h2>
+    <p class="center small">選んだ頭領だけ、あなたには ★ が表示されます。</p>
+    <div id="leaderCards" class="row"></div>
+    <div class="center" style="margin-top:16px"><button onclick="showPlacementScreen()">配置へ戻る</button></div>
+  </div>
+</div>
+
+<div id="message" class="infoBox"></div>
+<div id="gameArea" class="gameWrap">
+  <div class="gameInner">
+    <div id="playerGravePanel" class="gravePanel">
+      <div class="graveTitle blue">青の墓地</div>
+      <div id="playerGraveList" class="deadList"></div>
+    </div>
+
+    <div id="board"></div>
+
+    <div id="cpuGravePanel" class="gravePanel">
+      <div class="graveTitle red">赤の墓地</div>
+      <div id="cpuGraveList" class="deadList"></div>
+    </div>
+
+    <div class="side">
+      <button onclick="undoMove()">戻る</button>
+      <button onclick="showRules()">ルール</button>
+      <button onclick="showTitle()">タイトル</button>
+      <button onclick="resetBattle()">リセット</button>
+    </div>
+  </div>
+  <div id="grave" class="grave"></div>
+</div>
+
+<div id="resultScreen" class="screen">
+  <div class="window center">
+    <div id="resultTitle" class="result"></div>
+    <div id="resultSub" style="font-size:24px;margin:10px 0;"></div>
+    <div id="resultMessage" style="font-size:18px;margin:14px 0 22px;"></div>
+    <button onclick="showDifficulty()">もう一度遊ぶ</button>
+    <button onclick="showTitle()">タイトルへ</button>
+  </div>
+</div>
+
+<div id="abilityOverlay" class="abilityOverlay" aria-hidden="true" onclick="closeAbilityBanner()">
+  <div class="abilityToast" onclick="event.stopPropagation()">
+    <div class="abilitySmall">特殊能力発動！</div>
+    <div id="abilityName" class="abilityName"></div>
+    <div id="abilitySub" class="abilitySub"></div>
+    <div class="abilitySub" style="margin-top:10px;color:#ffe66d;">クリックで閉じる</div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>

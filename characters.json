@@ -1,0 +1,92 @@
+[
+  {
+    "type": "mitama",
+    "name": "ミタマ",
+    "icon": "👻",
+    "image": "images/characters/mitama.png",
+    "move": "上下左右1",
+    "ability": "輪廻転生",
+    "desc": "せおりが敵を撃破すると、墓地のミタマをせおりの後ろ1マスに復活させる。"
+  },
+  {
+    "type": "narukami",
+    "name": "ナルカミ",
+    "icon": "🦅",
+    "image": "images/characters/narukami.png",
+    "move": "上下左右2。はやて接触中は上下左右3",
+    "ability": "急降下",
+    "desc": "はやてと接触している間、移動距離が3マスになる。"
+  },
+  {
+    "type": "makami",
+    "name": "マカミ",
+    "icon": "🐺",
+    "image": "images/characters/makami.png",
+    "move": "銀将",
+    "ability": "奪取",
+    "desc": "しおんの後ろにいる時、しおんの正面の敵を撃破し、元の位置へ戻る。"
+  },
+  {
+    "type": "luna",
+    "name": "ルナ",
+    "icon": "🐇",
+    "image": "images/characters/luna.png",
+    "move": "桂馬",
+    "ability": "",
+    "desc": "将棋の桂馬の動き。"
+  },
+  {
+    "type": "jin",
+    "name": "だん",
+    "icon": "🥷",
+    "image": "images/characters/dan.png",
+    "move": "写し身",
+    "ability": "写し身",
+    "desc": "相手が直前に動かした駒の移動をコピーする。"
+  },
+  {
+    "type": "orochi",
+    "name": "オロチ",
+    "icon": "🐍",
+    "image": "images/characters/orochi.png",
+    "move": "斜め1",
+    "ability": "旋回",
+    "desc": "じゃのめと接触している間、全方向1マス動ける。"
+  },
+  {
+    "type": "janome",
+    "name": "じゃのめ",
+    "icon": "👱‍♀️",
+    "image": "images/characters/janome.png",
+    "move": "前1・後1・左右後ろ斜め",
+    "ability": "共鳴",
+    "desc": "オロチの旋回を支える。"
+  },
+  {
+    "type": "seori",
+    "name": "せおり",
+    "icon": "👩‍🦳",
+    "image": "images/characters/seori.png",
+    "move": "前1・左右前斜め・後ろ1",
+    "ability": "招魂",
+    "desc": "敵を撃破すると輪廻転生を発動できる。"
+  },
+  {
+    "type": "shion",
+    "name": "しおん",
+    "icon": "👨‍🎤",
+    "image": "images/characters/shion.png",
+    "move": "金将",
+    "ability": "指揮",
+    "desc": "マカミの奪取を支える。"
+  },
+  {
+    "type": "hayate",
+    "name": "はやて",
+    "icon": "👨‍🚒",
+    "image": "images/characters/hayate.png",
+    "move": "上下左右1",
+    "ability": "追い風",
+    "desc": "ナルカミの急降下を支える。"
+  }
+]

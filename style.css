@@ -1,0 +1,814 @@
+
+:root{--bg:#18005c;--blue:#4da6ff;--red:#ff5555;--yellow:#ffe66d;--panel:#050012;}
+*{box-sizing:border-box} body{margin:0;font-family:"DotGothic16",monospace;background:var(--bg);color:#fff;text-align:center}button{font-family:"DotGothic16",monospace;font-size:18px;padding:10px 16px;border:3px solid #fff;background:#000;color:#fff;cursor:pointer}button:hover{background:#fff;color:#000}.screen{min-height:100vh;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px}#titleScreen{display:flex}.titleStage{position:relative;width:92%;max-width:720px}.titleStage::after{content:"";display:block;position:absolute;left:0;right:0;bottom:0;height:38%;background:linear-gradient(to bottom,rgba(24,0,92,0),var(--bg) 34%,var(--bg));pointer-events:none}#titleImage{width:100%;display:block;image-rendering:pixelated}.titleMenu{position:absolute;left:50%;transform:translateX(-50%);bottom:9%;z-index:2;display:flex;flex-direction:column;align-items:center}.menuButton{width:230px;margin:8px;font-size:24px;position:relative}/* タイトルカーソル：最初から固定表示しない。操作時だけ手裏剣を出す */
+.titleMenu .titleChoice::before{content:"✹";position:absolute;left:16px;opacity:0;color:var(--yellow);text-shadow:0 0 8px var(--yellow)}
+.titleMenu .titleChoice:hover::before,
+.titleMenu .titleChoice:focus::before,
+.titleMenu .titleChoice.keyboardSelected::before{opacity:1;animation:titleCursorBlink .75s steps(1,end) infinite}
+@keyframes titleCursorBlink{0%,49%{opacity:1}50%,100%{opacity:0}}.window{max-width:920px;background:#050012;border:4px solid #8e5ad6;box-shadow:0 0 0 2px #d9c7ff inset;padding:22px;text-align:left;line-height:1.75;font-size:18px}.window h2{text-align:center;margin:0 0 16px}.blue{color:var(--blue)}.red{color:var(--red)}.yellow{color:var(--yellow)}.center{text-align:center}.small{font-size:15px;line-height:1.5}.row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}.card{width:155px;min-height:155px;border:3px solid #8e5ad6;background:#070018;box-shadow:0 0 0 2px #2a164f inset;padding:8px;cursor:pointer;position:relative}.card.selected{outline:5px solid var(--yellow)}.iconBig{font-size:36px}.ability{color:var(--yellow);font-size:14px}.desc{font-size:12px;line-height:1.35}.topbar{font-size:18px;margin:8px}.gameWrap{display:none;flex-direction:column;align-items:center}.gameInner{display:flex;gap:14px;align-items:flex-start;justify-content:center}#board{display:grid;grid-template-columns:repeat(9,64px);grid-template-rows:repeat(9,64px);gap:4px;margin:8px auto}.cell{width:64px;height:64px;background:#d8c7a3;border:2px solid #8b6f47;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;cursor:pointer;user-select:none;overflow:hidden}.territory{background-image:url("images/jinchi.png");background-size:cover;background-position:center}.player{background-color:var(--blue)}.cpu{background-color:var(--red)}.selectedPiece{outline:4px solid #fff}.movable{background:var(--blue)!important}.enemyMove{background:var(--red)!important}.specialMove{background:var(--yellow)!important;color:#000}.forbidden{background:#777!important}.pieceName{position:absolute;bottom:0;font-size:11px;background:rgba(0,0,0,.75);width:100%;color:#fff}.leaderMark{position:absolute;top:0;right:3px;font-size:17px;color:gold;text-shadow:1px 1px 2px #000}.explosion{position:absolute;top:2px;left:2px;font-size:25px;z-index:5}.infiltrated{transform:rotate(90deg);display:inline-block}.side{display:flex;flex-direction:column;gap:8px;margin-top:8px;min-width:120px}.infoBox{max-width:720px;min-height:34px;margin:8px;font-size:18px}.grave{font-size:13px;line-height:1.4;max-width:760px;margin:4px auto;color:#ddd}.result{font-size:32px;color:var(--yellow);margin:14px}.helpGrid{font-size:16px;white-space:pre;line-height:1.1;text-align:center;color:#fff}.tag{display:inline-block;border:1px solid #fff;padding:1px 5px;margin:2px;font-size:12px}
+@media(max-width:700px){#board{grid-template-columns:repeat(9,44px);grid-template-rows:repeat(9,44px);gap:2px}.cell{width:44px;height:44px;font-size:24px}.pieceName{font-size:8px}.gameInner{gap:6px}.side button{font-size:12px;padding:8px}.window{font-size:16px;padding:16px}.card{width:140px}.infoBox{font-size:15px}}
+@media(max-width:560px){#board{grid-template-columns:repeat(9,36px);grid-template-rows:repeat(9,36px)}.cell{width:36px;height:36px;font-size:19px}.pieceName{font-size:7px}.gameInner{align-items:center}.side{min-width:72px}.side button{font-size:11px;padding:6px 4px}.menuButton{font-size:20px;width:210px}.card{width:44%;min-height:150px}.iconBig{font-size:30px}}
+
+/* Ver.1.3: 左右墓地＋じん写し身表示 */
+.gravePanel{width:118px;min-height:590px;margin-top:8px;border:3px solid #fff;background:#050012;padding:8px;color:#fff;text-align:center;}
+.graveTitle{font-size:15px;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid #fff;}
+.deadList{display:flex;flex-direction:column;gap:7px;align-items:center;}
+.deadPiece{width:92px;min-height:48px;border:2px solid #777;background:#111;padding:4px;font-size:12px;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:.9;}
+.deadIcon{font-size:22px;filter:grayscale(1);}
+.deadName{font-size:11px;}
+.copyBadge{position:absolute;top:1px;left:2px;z-index:6;font-size:16px;background:#000;border:1px solid var(--yellow);color:var(--yellow);line-height:1;padding:1px 3px;border-radius:3px;box-shadow:1px 1px 0 #000;}
+.copyName{position:absolute;top:20px;left:1px;right:1px;z-index:6;font-size:8px;background:rgba(0,0,0,.8);color:var(--yellow);line-height:1.05;padding:1px 0;}
+.jinCopyInfo{margin:6px auto 0;max-width:760px;font-size:14px;color:var(--yellow);line-height:1.4;}
+@media(max-width:700px){.gravePanel{width:74px;min-height:400px;padding:4px}.graveTitle{font-size:11px}.deadPiece{width:58px;min-height:38px;font-size:9px}.deadIcon{font-size:17px}.deadName{font-size:8px}.copyBadge{font-size:12px}.copyName{display:none}}
+@media(max-width:560px){.gravePanel{width:52px;min-height:330px;padding:3px}.graveTitle{font-size:9px}.deadPiece{width:42px;min-height:32px;padding:2px}.deadIcon{font-size:15px}.deadName{display:none}.jinCopyInfo{font-size:11px}.gameInner{gap:3px}}
+
+
+/* Ver.2.0β: 特殊能力表示 */
+.abilityOverlay{position:fixed;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:999;pointer-events:auto;background:rgba(0,0,0,.25);cursor:pointer;}
+.abilityOverlay.show{display:flex;}
+.abilityToast{min-width:280px;max-width:520px;background:#050012;border:4px solid var(--yellow);box-shadow:0 0 0 3px #000,0 0 0 6px #fff inset;padding:18px 24px;text-align:center;color:#fff;}
+.abilitySmall{font-size:18px;color:#fff;margin-bottom:6px;}
+.abilityName{font-size:34px;color:var(--yellow);text-shadow:3px 3px 0 #000;margin:4px 0;}
+.abilitySub{font-size:16px;color:#ddd;line-height:1.4;}
+@media(max-width:560px){.abilityToast{min-width:220px;padding:14px}.abilitySmall{font-size:14px}.abilityName{font-size:25px}.abilitySub{font-size:13px}}
+
+
+/* Ver.2.0γ: ぬるぬる移動アニメーション */
+.movingPiece{position:fixed;z-index:2000;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:transform .42s cubic-bezier(.18,.82,.22,1);filter:drop-shadow(0 4px 0 rgba(0,0,0,.6));will-change:transform;}
+.movingPiece.dash{transition:transform .24s cubic-bezier(.12,.9,.16,1);}
+.animSource>span:first-child{opacity:.18;}
+.hitBoom{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:34px;z-index:50;animation:boomPop .26s steps(3,end);pointer-events:none;}
+@keyframes boomPop{0%{transform:translate(-50%,-50%) scale(.6);opacity:.4}50%{transform:translate(-50%,-50%) scale(1.35);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:.1}}
+@media(max-width:560px){.hitBoom{font-size:24px}}
+
+/* Ver.2.1: キャラ画像対応 */
+.card .iconBig{height:82px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;}
+.cardPortrait{width:72px;height:72px;object-fit:cover;object-position:center;border:3px solid #8e5ad6;background:#12002d;image-rendering:auto;box-shadow:0 0 0 2px #000;}
+.boardPortrait{width:52px;height:52px;object-fit:cover;object-position:center;border-radius:3px;image-rendering:auto;filter:drop-shadow(0 2px 0 rgba(0,0,0,.65));}
+.cell.player .boardPortrait{outline:2px solid rgba(77,166,255,.85)}
+.cell.cpu .boardPortrait{outline:2px solid rgba(255,85,85,.85)}
+.deadPortrait{width:30px;height:30px;object-fit:cover;object-position:center;filter:grayscale(1);opacity:.85;border:1px solid #777;background:#111;}
+.movingPortrait{width:100%;height:100%;object-fit:cover;object-position:center;border-radius:4px;}
+.copyBadge{width:22px;height:22px;padding:1px;display:flex;align-items:center;justify-content:center;}
+.copyBadge img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
+.emojiFallback{display:inline-flex;align-items:center;justify-content:center;}
+@media(max-width:700px){.boardPortrait{width:34px;height:34px}.cardPortrait{width:64px;height:64px}.card .iconBig{height:72px}.deadPortrait{width:24px;height:24px}.copyBadge{width:18px;height:18px}}
+@media(max-width:560px){.boardPortrait{width:28px;height:28px}.cardPortrait{width:58px;height:58px}.card .iconBig{height:64px}.deadPortrait{width:20px;height:20px}.copyBadge{width:16px;height:16px}}
+
+/* Ver.2.1.1: キャラ選択画面を大きめアイコンの2行グリッドに変更 */
+.teamWindow{
+  max-width:760px;
+  padding:18px 20px 20px;
+}
+.teamWindow h2{
+  font-size:20px;
+  margin-bottom:14px;
+}
+.teamGrid{
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:14px 14px;
+  justify-items:center;
+}
+.teamCard{
+  width:118px;
+  min-height:132px;
+  border:3px solid #d79b22;
+  background:#060012;
+  box-shadow:0 0 0 2px #2b174f inset;
+  padding:6px 5px 8px;
+  cursor:pointer;
+  position:relative;
+  text-align:center;
+  transition:transform .08s ease, border-color .08s ease;
+}
+.teamCard:hover{
+  transform:translateY(-2px);
+  border-color:#ffe66d;
+}
+.teamCard.selected{
+  outline:4px solid #ffe66d;
+  border-color:#ffe66d;
+}
+.teamPortraitWrap{
+  width:94px;
+  height:86px;
+  margin:0 auto 5px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  background:#020008;
+}
+.teamPortrait{
+  width:94px;
+  height:86px;
+  object-fit:cover;
+  object-position:center;
+  image-rendering:auto;
+}
+.teamName{
+  color:#ffe66d;
+  font-size:15px;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.teamNumber{
+  position:absolute;
+  left:4px;
+  top:3px;
+  color:#ffe66d;
+  background:rgba(0,0,0,.65);
+  font-size:12px;
+  padding:0 3px;
+}
+.teamCheck{
+  display:none;
+  position:absolute;
+  right:4px;
+  top:3px;
+  width:20px;
+  height:20px;
+  line-height:18px;
+  border:2px solid #ffe66d;
+  background:#152000;
+  color:#ffe66d;
+  font-size:15px;
+  font-weight:bold;
+}
+.teamCard.selected .teamCheck{display:block;}
+.selectCount{
+  margin-top:16px;
+  font-size:18px;
+}
+#teamDone:disabled{
+  opacity:.45;
+  color:#777;
+  border-color:#777;
+  cursor:not-allowed;
+}
+.leaderChoice{
+  width:142px;
+  min-height:164px;
+}
+.leaderChoice .teamPortraitWrap{
+  width:112px;
+  height:108px;
+}
+.leaderChoice .teamPortrait{
+  width:112px;
+  height:108px;
+}
+.leaderHint{
+  margin-top:5px;
+  font-size:12px;
+  color:#fff;
+}
+@media(max-width:760px){
+  .teamWindow{max-width:96vw;padding:14px 10px;}
+  .teamGrid{grid-template-columns:repeat(5, 1fr);gap:8px 7px;}
+  .teamCard{width:82px;min-height:104px;padding:4px 3px 6px;}
+  .teamPortraitWrap{width:68px;height:64px;}
+  .teamPortrait{width:68px;height:64px;}
+  .teamName{font-size:12px;}
+  .teamNumber{font-size:10px;}
+  .teamCheck{width:17px;height:17px;line-height:15px;font-size:12px;}
+}
+@media(max-width:520px){
+  .teamGrid{grid-template-columns:repeat(2, 1fr);gap:10px;}
+  .teamCard{width:138px;min-height:146px;}
+  .teamPortraitWrap{width:110px;height:98px;}
+  .teamPortrait{width:110px;height:98px;}
+  .teamName{font-size:15px;}
+}
+
+/* Ver.2.1.2: 盤面の駒名ラベルを非表示。顔を大きく見せる */
+.pieceName{display:none!important;}
+
+/* Ver.2.1.2: キャラ選択を大きめ・顔全体表示・2段5体に調整 */
+.teamWindow{
+  max-width:900px;
+  padding:18px 24px 22px;
+}
+.teamGrid{
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:18px 16px;
+  justify-items:center;
+}
+.teamCard{
+  width:140px;
+  min-height:158px;
+  padding:7px 6px 9px;
+}
+.teamPortraitWrap{
+  width:116px;
+  height:108px;
+  margin:0 auto 6px;
+  overflow:hidden;
+  background:#020008;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.teamPortrait{
+  width:112px;
+  height:104px;
+  object-fit:contain;
+  object-position:center center;
+  image-rendering:auto;
+}
+.teamName{
+  font-size:17px;
+}
+.teamNumber{
+  font-size:13px;
+}
+.teamCheck{
+  width:22px;
+  height:22px;
+  line-height:20px;
+}
+.boardPortrait{
+  width:58px;
+  height:58px;
+  object-fit:contain;
+  object-position:center center;
+}
+.movingPortrait{
+  object-fit:contain;
+  object-position:center center;
+}
+@media(max-width:760px){
+  .teamGrid{grid-template-columns:repeat(5, 1fr);gap:9px 7px;}
+  .teamCard{width:86px;min-height:116px;padding:4px 3px 6px;}
+  .teamPortraitWrap{width:72px;height:70px;}
+  .teamPortrait{width:70px;height:68px;object-fit:contain;}
+  .teamName{font-size:12px;}
+}
+@media(max-width:520px){
+  .teamGrid{grid-template-columns:repeat(2, 1fr);gap:10px;}
+  .teamCard{width:138px;min-height:152px;}
+  .teamPortraitWrap{width:112px;height:102px;}
+  .teamPortrait{width:110px;height:100px;object-fit:contain;}
+  .teamName{font-size:15px;}
+  .boardPortrait{width:31px;height:31px;}
+}
+
+/* Ver.2.1.3: キャラごとの表示位置調整。ルナの顎まで入るように修正 */
+.teamPortrait.char-luna,
+.cardPortrait.char-luna,
+.boardPortrait.char-luna,
+.deadPortrait.char-luna,
+.movingPortrait.char-luna{
+  object-fit:contain;
+  object-position:center center;
+}
+.teamPortraitWrap:has(.char-luna){
+  background:#080010;
+}
+
+/* Ver.2.1.5: キャラ選択時の動き・特殊能力表示 */
+.teamSelectLayout{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap:18px;
+  align-items:start;
+}
+.teamDetail{
+  min-height:360px;
+  border:3px solid #8e5ad6;
+  box-shadow:0 0 0 2px #2a164f inset;
+  background:#070018;
+  padding:12px;
+  text-align:left;
+  color:#fff;
+}
+.detailHeader{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  border-bottom:2px solid #3b2365;
+  padding-bottom:8px;
+  margin-bottom:10px;
+}
+.detailPortraitBox{
+  width:72px;
+  height:72px;
+  border:2px solid #d79b22;
+  background:#020008;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:none;
+}
+.detailPortrait{
+  width:68px;
+  height:68px;
+  object-fit:contain;
+  object-position:center;
+}
+.detailName{
+  color:#ffe66d;
+  font-size:22px;
+  line-height:1.1;
+}
+.detailAbilityName{
+  color:#ffe66d;
+  font-size:14px;
+  margin-top:4px;
+}
+.detailSectionTitle{
+  color:#ffe66d;
+  font-size:15px;
+  margin:10px 0 4px;
+}
+.detailText{
+  font-size:13px;
+  line-height:1.45;
+}
+.moveDiagram{
+  display:grid;
+  grid-template-columns:repeat(5,22px);
+  grid-template-rows:repeat(5,22px);
+  gap:2px;
+  margin:7px 0 8px;
+}
+.moveCell{
+  width:22px;
+  height:22px;
+  border:1px solid #30214f;
+  background:#0d0920;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  line-height:1;
+}
+.moveCell.can{background:#235ca8;border-color:#4da6ff;}
+.moveCell.special{background:#d0a800;border-color:#ffe66d;color:#000;}
+.moveCell.center{background:#111;border-color:#fff;color:#ffe66d;}
+.detailLegend{
+  display:flex;
+  gap:8px;
+  font-size:11px;
+  margin:6px 0 2px;
+  color:#ddd;
+  flex-wrap:wrap;
+}
+.legendChip{display:inline-flex;align-items:center;gap:3px;}
+.legendBox{width:12px;height:12px;display:inline-block;border:1px solid #fff;}
+.legendBlue{background:#235ca8;border-color:#4da6ff;}
+.legendYellow{background:#d0a800;border-color:#ffe66d;}
+.teamCard.focused{
+  box-shadow:0 0 0 2px #2b174f inset, 0 0 12px rgba(255,230,109,.75);
+}
+@media(max-width:980px){
+  .teamSelectLayout{grid-template-columns:1fr;}
+  .teamDetail{max-width:720px;margin:0 auto;width:100%;}
+}
+@media(max-width:760px){
+  .teamDetail{padding:10px;}
+  .detailHeader{gap:8px;}
+  .detailPortraitBox{width:58px;height:58px;}
+  .detailPortrait{width:54px;height:54px;}
+  .detailName{font-size:18px;}
+  .moveDiagram{grid-template-columns:repeat(5,19px);grid-template-rows:repeat(5,19px);}
+  .moveCell{width:19px;height:19px;font-size:11px;}
+}
+
+
+/* Ver.2.1.6: キャラ10体と説明が重ならないよう、説明を下スペースへ移動 */
+.teamWindow{ max-width:1100px; }
+.teamSelectLayout{ display:block !important; }
+.teamGrid{
+  width:100%;
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:18px 16px;
+  justify-items:center;
+}
+.teamDetail{
+  width:100%;
+  max-width:980px;
+  min-height:auto;
+  margin:22px auto 0;
+  display:grid;
+  grid-template-columns:220px 1fr 1fr 1fr;
+  gap:12px 18px;
+  align-items:start;
+}
+.detailHeader{
+  grid-row:1 / span 3;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  border-bottom:none;
+  border-right:2px solid #3b2365;
+  padding:0 14px 0 0;
+  margin:0;
+}
+.detailPortraitBox{ width:140px; height:110px; }
+.detailPortrait{ width:134px; height:104px; }
+.detailName{ font-size:24px; }
+.detailAbilityName{ font-size:16px; }
+.detailSectionTitle{ margin:0 0 5px; font-size:16px; }
+.detailText{ font-size:13px; line-height:1.45; }
+.moveDiagram{ margin:4px 0 6px; }
+.detailLegend{ grid-column:2 / 3; margin-top:-2px; }
+@media(max-width:980px){
+  .teamDetail{ display:block; max-width:720px; margin-top:16px; }
+  .detailHeader{
+    flex-direction:row;
+    text-align:left;
+    border-right:none;
+    border-bottom:2px solid #3b2365;
+    padding:0 0 8px;
+    margin-bottom:10px;
+  }
+  .detailPortraitBox{width:72px;height:72px;}
+  .detailPortrait{width:68px;height:68px;}
+}
+@media(max-width:760px){
+  .teamWindow{max-width:96vw;padding:12px;}
+  .teamGrid{grid-template-columns:repeat(5, 1fr);gap:8px 6px;}
+  .teamCard{width:82px;min-height:112px;}
+  .teamPortraitWrap{width:70px;height:68px;}
+  .teamPortrait{width:68px;height:66px;}
+  .teamName{font-size:12px;}
+}
+@media(max-width:520px){
+  .teamGrid{grid-template-columns:repeat(2, 1fr);gap:10px;}
+  .teamCard{width:138px;min-height:152px;}
+  .teamPortraitWrap{width:112px;height:102px;}
+  .teamPortrait{width:110px;height:100px;}
+  .teamName{font-size:15px;}
+}
+
+/* Ver.2.1.7: キャラ詳細のズレ修正・7x7移動図・黄色マスを見やすく */
+.teamDetail{
+  grid-template-columns:220px repeat(3, minmax(0,1fr)) !important;
+  gap:14px 18px !important;
+}
+.detailCol{
+  min-height:100%;
+  border-left:2px solid #3b2365;
+  padding-left:14px;
+}
+.detailSectionTitle{
+  display:block;
+  width:100%;
+  color:#ffe66d;
+  border-bottom:1px solid #6b4aa2;
+  padding-bottom:3px;
+  margin:0 0 8px !important;
+  line-height:1.25;
+}
+.detailText{
+  margin-top:6px;
+}
+.moveDiagram{
+  display:grid !important;
+  grid-template-columns:repeat(7,18px) !important;
+  grid-template-rows:repeat(7,18px) !important;
+  gap:2px !important;
+  margin:4px 0 6px !important;
+}
+.moveCell{
+  width:18px !important;
+  height:18px !important;
+  font-size:10px !important;
+  background:#0d0920;
+}
+.moveCell.can{
+  background:#235ca8 !important;
+  border-color:#4da6ff !important;
+}
+.moveCell.special{
+  background:#ffe66d !important;
+  border-color:#fff2a8 !important;
+  color:#111 !important;
+}
+.moveCell.center{
+  background:#111 !important;
+  border-color:#fff !important;
+  color:#fff !important;
+  box-shadow:0 0 0 2px #000 inset;
+}
+.detailLegend{
+  grid-column:auto !important;
+  margin:6px 0 4px !important;
+}
+.legendCenter{background:#111;border-color:#fff;}
+@media(max-width:980px){
+  .teamDetail{display:block !important;}
+  .detailCol{border-left:none;border-top:2px solid #3b2365;padding-left:0;padding-top:10px;margin-top:10px;}
+}
+@media(max-width:760px){
+  .moveDiagram{grid-template-columns:repeat(7,16px) !important;grid-template-rows:repeat(7,16px) !important;}
+  .moveCell{width:16px !important;height:16px !important;font-size:9px !important;}
+}
+
+
+/* Ver.2.1.8: 組み合わせ欄の絵文字を正式ミニアイコンに変更 */
+.comboPartner{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  color:#ffe66d;
+  white-space:nowrap;
+}
+.comboIcon{
+  width:24px;
+  height:24px;
+  object-fit:contain;
+  object-position:center;
+  background:#060012;
+  border:1px solid #8e5ad6;
+  vertical-align:middle;
+}
+@media(max-width:760px){
+  .comboIcon{width:20px;height:20px;}
+}
+
+
+/* Ver.2.2: キャラ選択の番号を削除し、能力名は特殊能力欄へ移動 */
+.teamNumber{display:none!important;}
+.detailHeader .detailAbilityName{display:none!important;}
+.abilitySectionTitle{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.abilityInlineName{
+  color:#fff;
+  font-size:.92em;
+  border-left:2px solid #ffe66d;
+  padding-left:8px;
+  line-height:1.2;
+}
+.teamCard{
+  padding-top:10px;
+}
+.teamPortraitWrap{
+  margin-top:2px;
+}
+
+
+/* Ver.2.2.1: キャラ選択カードから名前を消し、詳細欄をトレーディングカード風に強化 */
+#teamScreen .teamCard .teamName{
+  display:none !important;
+}
+#teamScreen .teamCard{
+  min-height:118px;
+  padding:8px 6px 10px;
+  border-radius:0;
+  background:
+    linear-gradient(180deg, rgba(18,0,45,.98), rgba(4,0,18,.98));
+}
+#teamScreen .teamPortraitWrap{
+  margin:0 auto;
+}
+#teamScreen .teamCard.selected::after{
+  content:"選択済";
+  position:absolute;
+  left:50%;
+  bottom:6px;
+  transform:translateX(-50%);
+  color:#111;
+  background:#ffe66d;
+  border:2px solid #fff;
+  padding:1px 6px;
+  font-size:12px;
+  line-height:1.1;
+  white-space:nowrap;
+}
+#teamScreen .teamCard.focused:not(.selected)::after{
+  content:"詳細";
+  position:absolute;
+  left:50%;
+  bottom:6px;
+  transform:translateX(-50%);
+  color:#ffe66d;
+  background:#050012;
+  border:1px solid #8e5ad6;
+  padding:1px 6px;
+  font-size:12px;
+  line-height:1.1;
+  white-space:nowrap;
+}
+
+#teamScreen .teamDetail{
+  position:relative;
+  border:4px solid #d79b22 !important;
+  box-shadow:
+    0 0 0 3px #050012 inset,
+    0 0 0 6px #8e5ad6 inset,
+    0 8px 0 rgba(0,0,0,.45);
+  background:
+    linear-gradient(180deg, #17003c 0%, #070018 45%, #03000b 100%);
+  padding:18px !important;
+}
+#teamScreen .teamDetail::before{
+  content:"CHARACTER CARD";
+  position:absolute;
+  top:-14px;
+  left:18px;
+  background:#050012;
+  color:#ffe66d;
+  border:2px solid #d79b22;
+  padding:1px 8px;
+  font-size:12px;
+  letter-spacing:1px;
+}
+#teamScreen .detailHeader{
+  background:#0b0023;
+  border:3px solid #8e5ad6;
+  box-shadow:0 0 0 2px #2a164f inset;
+  padding:10px !important;
+}
+#teamScreen .detailPortraitBox{
+  border:3px solid #d79b22 !important;
+  background:#020008;
+  box-shadow:0 0 0 2px #000 inset;
+}
+#teamScreen .detailName{
+  color:#ffe66d;
+  text-shadow:2px 2px 0 #000;
+  letter-spacing:1px;
+}
+#teamScreen .detailCol{
+  background:#09001c;
+  border:2px solid #3b2365;
+  padding:12px !important;
+  min-height:170px;
+}
+#teamScreen .detailSectionTitle{
+  background:#2a164f;
+  color:#ffe66d;
+  border:2px solid #8e5ad6 !important;
+  padding:4px 8px !important;
+  margin:0 0 10px !important;
+  box-shadow:0 0 0 1px #000 inset;
+}
+#teamScreen .abilityInlineName{
+  color:#fff;
+  background:#050012;
+  border:1px solid #ffe66d;
+  padding:2px 6px;
+  margin-left:2px;
+}
+#teamScreen .detailText{
+  color:#fff;
+  font-size:14px;
+  line-height:1.6;
+}
+#teamScreen .moveDiagram{
+  justify-content:center;
+}
+#teamScreen .comboPartner{
+  border:1px solid #8e5ad6;
+  background:#050012;
+  padding:4px 8px;
+  margin:2px 4px 2px 0;
+}
+@media(max-width:760px){
+  #teamScreen .teamCard{min-height:94px;}
+  #teamScreen .teamCard.selected::after,
+  #teamScreen .teamCard.focused:not(.selected)::after{font-size:10px;bottom:4px;}
+  #teamScreen .teamDetail{padding:12px !important;}
+}
+@media(max-width:520px){
+  #teamScreen .teamCard{min-height:130px;}
+}
+
+
+/* Ver.2.2.2 5体選択確認 */
+.confirmOverlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:rgba(0,0,0,.72);
+  align-items:center;
+  justify-content:center;
+}
+.confirmBox{
+  width:min(720px,92vw);
+  background:#070014;
+  border:4px solid #fff;
+  box-shadow:0 0 0 4px #7c4ad4, 0 0 0 8px #120035;
+  padding:24px;
+  text-align:center;
+  color:#fff;
+}
+.confirmTitle{
+  font-size:30px;
+  color:#ffe66d;
+  margin-bottom:18px;
+  text-shadow:2px 2px 0 #000;
+}
+.confirmFaces{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:14px 0 20px;
+}
+.confirmFaceCard{
+  width:92px;
+  height:92px;
+  border:3px solid #8e5ad6;
+  background:#120035;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.confirmFaceCard img{
+  width:86px;
+  height:86px;
+  object-fit:contain;
+  image-rendering:pixelated;
+}
+.confirmButtons{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+}
+.confirmButtons button{
+  min-width:150px;
+  font-size:22px;
+}
+@media(max-width:520px){
+  .confirmBox{padding:18px 12px;}
+  .confirmTitle{font-size:22px;}
+  .confirmFaceCard{width:58px;height:58px;}
+  .confirmFaceCard img{width:54px;height:54px;}
+  .confirmButtons button{min-width:110px;font-size:16px;}
+}
+
+/* Ver.2.2.4: キャラ選択の不要ボタン削除＋写し身バーの正式アイコン化 */
+.jinCopyInfo{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:17px;line-height:1.4;}
+.jinCopyTitle{color:var(--yellow);font-weight:bold;margin-right:4px;}
+.jinCopySide{display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);padding:3px 8px;border-radius:4px;}
+.jinCopyTiny{width:24px;height:24px;object-fit:cover;object-position:center;background:#05030c;border:1px solid var(--purple);display:inline-block;vertical-align:middle;}
+.noCopy{opacity:.78;}
+.selectCount{margin-top:14px;margin-bottom:8px;}
+@media(max-width:700px){.jinCopyInfo{font-size:12px;gap:6px}.jinCopyTiny{width:18px;height:18px}.jinCopySide{padding:2px 4px}}
+
+/* Ver.2.2.5: 駒の上にも移動範囲レイヤーを重ねる */
+.cell{ isolation:isolate; }
+.rangeOverlay{
+  position:absolute;
+  inset:0;
+  z-index:18;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  animation:rangePulse 1s steps(2,end) infinite;
+}
+.rangeOverlay.blue{
+  background:rgba(77,166,255,.48);
+  box-shadow:inset 0 0 0 4px rgba(77,166,255,.95);
+}
+.rangeOverlay.yellow{
+  background:rgba(255,230,109,.55);
+  box-shadow:inset 0 0 0 4px rgba(255,230,109,1);
+}
+.rangeOverlay.red{
+  background:rgba(255,85,85,.42);
+  box-shadow:inset 0 0 0 4px rgba(255,85,85,.9);
+}
+@keyframes rangePulse{
+  0%,100%{opacity:.92;}
+  50%{opacity:.52;}
+}
+.leaderMark,.copyBadge,.copyName,.explosion{z-index:25;}
+.selectedPiece{outline:4px solid #fff; outline-offset:-4px;}
+
+/* Ver.3.0 Alpha: 自由配置画面 */
+.placementWindow{max-width:1040px;padding:18px 22px 22px;}
+.placementLayout{display:flex;gap:20px;align-items:flex-start;justify-content:center;}
+.placementBoard{display:grid;grid-template-columns:repeat(9,52px);grid-template-rows:repeat(9,52px);gap:3px;background:#0b0020;padding:8px;border:3px solid #8e5ad6;box-shadow:0 0 0 2px #d9c7ff inset;}
+.placementCell{width:52px;height:52px;background:#d8c7a3;border:2px solid #8b6f47;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;}
+.placementCell.territory{background-image:url("images/jinchi.png");background-size:cover;background-position:center;}
+.placementCell.ownSetupZone::after{content:"";position:absolute;inset:0;background:rgba(77,166,255,.15);pointer-events:none;}
+.placementCell.placeOK::after{content:"";position:absolute;inset:0;background:rgba(77,166,255,.55);pointer-events:none;animation:placePulse .85s steps(2,end) infinite;}
+.placementCell.placeNG::after{content:"×";position:absolute;inset:0;background:rgba(255,85,85,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;pointer-events:none;}
+@keyframes placePulse{0%,49%{opacity:.9}50%,100%{opacity:.55}}
+.placementCell.placedPiece{background:#4da6ff;}
+.placementCell.placementSelected{outline:4px solid #ffe66d;}
+.placementPortrait{width:46px;height:46px;object-fit:contain;object-position:center center;image-rendering:auto;filter:drop-shadow(0 2px 0 rgba(0,0,0,.65));z-index:2;}
+.placementSide{width:260px;min-height:520px;background:#050012;border:3px solid #fff;padding:12px;text-align:center;}
+.placementSideTitle{font-size:18px;color:#ffe66d;border-bottom:2px solid #fff;padding-bottom:8px;margin-bottom:10px;}
+.placementBench{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;justify-items:center;min-height:260px;}
+.benchPiece{width:104px;min-height:112px;border:3px solid #8e5ad6;background:#070018;padding:6px;cursor:pointer;color:#fff;font-size:13px;}
+.benchPiece.selected{outline:4px solid #ffe66d;border-color:#ffe66d;}
+.benchPortrait{width:78px;height:78px;object-fit:contain;object-position:center center;background:#020008;display:block;margin:0 auto 4px;}
+.placementMessage{margin-top:12px;min-height:66px;font-size:14px;line-height:1.5;color:#ffe66d;}
+.placementConfirm{display:none;margin-top:18px;text-align:center;background:#050012;border:3px solid #ffe66d;padding:14px;}
+.placementConfirm .confirmTitle{font-size:22px;color:#ffe66d;margin-bottom:10px;}
+@media(max-width:900px){.placementLayout{flex-direction:column;align-items:center}.placementSide{width:min(92vw,520px);min-height:auto}.placementBench{grid-template-columns:repeat(5,1fr);min-height:auto}.benchPiece{width:86px;min-height:98px}.benchPortrait{width:64px;height:64px}.placementBoard{grid-template-columns:repeat(9,42px);grid-template-rows:repeat(9,42px)}.placementCell{width:42px;height:42px}.placementPortrait{width:36px;height:36px}}
+@media(max-width:520px){.placementBoard{grid-template-columns:repeat(9,34px);grid-template-rows:repeat(9,34px);gap:2px;padding:5px}.placementCell{width:34px;height:34px}.placementPortrait{width:29px;height:29px}.placementBench{grid-template-columns:repeat(3,1fr)}.benchPiece{width:90px;min-height:92px}.benchPortrait{width:58px;height:58px}.placementWindow{padding:14px 8px}}
